@@ -23,6 +23,7 @@
                     <button class="tab-button" data-tab="clubs">🏛️ Clubs</button>
                     <button class="tab-button" data-tab="relationships">🔗 Relationships</button>
                     <button class="tab-button" data-tab="social">👥 Social Features</button>
+                    <button class="tab-button" data-tab="schema">🗄️ Database Schema</button>
                     <button class="tab-button" data-tab="demo">🚀 Demo Data</button>
                 </div>
             </div>
@@ -269,6 +270,35 @@
                             <p><strong>Courses:</strong> CS101, MATH101, ENG101</p>
                             <p><strong>Clubs:</strong> Debate Club, Chess Club, Drama Club</p>
                             <p><strong>Features to test:</strong> Follow relationships, course enrollments, club memberships</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Database Schema Tab -->
+            <div class="tab-content" id="schema-tab">
+                <section class="form-section">
+                    <h2>🗄️ Database Schema</h2>
+                    
+                    <div class="form-group">
+                        <h3>Schema Overview</h3>
+                        <p class="feature-description">View the complete structure of your Neo4j database including nodes, relationships, constraints, and statistics.</p>
+                        <button id="loadSchemaBtn" class="demo-button">Load Database Schema</button>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Quick Schema Actions</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="exportSchemaBtn" class="demo-button" style="background: #28a745;">Export Schema (JSON)</button>
+                            <button id="visualSchemaBtn" class="demo-button" style="background: #17a2b8;">Visual Schema</button>
+                            <button id="schemaStatsBtn" class="demo-button" style="background: #ffc107; color: #000;">Schema Statistics</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="schemaDisplay" style="display: none;">
+                        <h3>Schema Details</h3>
+                        <div id="schemaContent" class="schema-content">
+                            <!-- Schema will be loaded here -->
                         </div>
                     </div>
                 </section>

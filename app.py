@@ -329,6 +329,169 @@ def get_popular_courses():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Schema and Database Information Endpoints
+@app.route('/api/schema', methods=['GET'])
+def get_database_schema():
+    """Get comprehensive database schema information"""
+    try:
+        schema_info = {
+            "nodes": {},
+            "relationships": {},
+            "constraints": [],
+            "indexes": [],
+            "statistics": {}
+        }
+        
+        # Get node labels and their properties
+        node_query = """
+        CALL db.labels() YIELD label
+        RETURN collect(label) as labels
+        """
+        labels_result = db.run_query(node_query)
+        labels = labels_result[0]['labels'] if labels_result else []
+        
+        for label in labels:
+            # Get properties for each node type
+            prop_query = f"""
+            MATCH (n:{label})
+            WITH keys(n) as keys
+            UNWIND keys as key
+            RETURN DISTINCT key
+            ORDER BY key
+            """
+            props_result = db.run_query(prop_query)
+            properties = [record['key'] for record in props_result]
+            
+            # Get count of nodes
+            count_query = f"MATCH (n:{label}) RETURN count(n) as count"
+            count_result = db.run_query(count_query)
+            count = count_result[0]['count'] if count_result else 0
+            
+            schema_info["nodes"][label] = {
+                "properties": properties,
+                "count": count
+            }
+        
+        # Get relationship types and their properties
+        rel_query = """
+        CALL db.relationshipTypes() YIELD relationshipType
+        RETURN collect(relationshipType) as types
+        """
+        rel_result = db.run_query(rel_query)
+        rel_types = rel_result[0]['types'] if rel_result else []
+        
+        for rel_type in rel_types:
+            # Get relationship count and patterns
+            rel_pattern_query = f"""
+            MATCH (a)-[r:{rel_type}]->(b)
+            WITH labels(a) as startLabels, labels(b) as endLabels, count(r) as count
+            RETURN startLabels[0] as startLabel, endLabels[0] as endLabel, count
+            """
+            pattern_result = db.run_query(rel_pattern_query)
+            
+            patterns = []
+            total_count = 0
+            for record in pattern_result:
+                patterns.append({
+                    "from": record['startLabel'],
+                    "to": record['endLabel'],
+                    "count": record['count']
+                })
+                total_count += record['count']
+            
+            schema_info["relationships"][rel_type] = {
+                "patterns": patterns,
+                "total_count": total_count
+            }
+        
+        # Get constraints
+        try:
+            constraints_query = "SHOW CONSTRAINTS"
+            constraints_result = db.run_query(constraints_query)
+            schema_info["constraints"] = [dict(record) for record in constraints_result]
+        except:
+            schema_info["constraints"] = []
+        
+        # Get indexes
+        try:
+            indexes_query = "SHOW INDEXES"
+            indexes_result = db.run_query(indexes_query)
+            schema_info["indexes"] = [dict(record) for record in indexes_result]
+        except:
+            schema_info["indexes"] = []
+        
+        # Get database statistics
+        stats_query = """
+        MATCH (n) 
+        WITH count(n) as totalNodes
+        MATCH ()-[r]->()
+        WITH totalNodes, count(r) as totalRelationships
+        RETURN totalNodes, totalRelationships
+        """
+        stats_result = db.run_query(stats_query)
+        if stats_result:
+            schema_info["statistics"] = {
+                "total_nodes": stats_result[0]['totalNodes'],
+                "total_relationships": stats_result[0]['totalRelationships'],
+                "node_types": len(labels),
+                "relationship_types": len(rel_types)
+            }
+        
+        return jsonify({
+            'success': True,
+            'data': schema_info,
+            'message': 'Database schema retrieved successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/schema/visual', methods=['GET'])
+def get_visual_schema():
+    """Get schema in a format suitable for visualization"""
+    try:
+        # Get all relationships with their patterns
+        visual_query = """
+        MATCH (a)-[r]->(b)
+        WITH labels(a)[0] as sourceLabel, type(r) as relationshipType, labels(b)[0] as targetLabel, count(r) as count
+        RETURN sourceLabel, relationshipType, targetLabel, count
+        ORDER BY count DESC
+        """
+        
+        relationships = db.run_query(visual_query)
+        
+        # Get node information
+        nodes_query = """
+        MATCH (n)
+        WITH labels(n)[0] as label, count(n) as count
+        RETURN label, count
+        ORDER BY count DESC
+        """
+        
+        nodes = db.run_query(nodes_query)
+        
+        visual_schema = {
+            "nodes": [{"label": record['label'], "count": record['count']} for record in nodes],
+            "relationships": [
+                {
+                    "source": record['sourceLabel'],
+                    "target": record['targetLabel'],
+                    "type": record['relationshipType'],
+                    "count": record['count']
+                }
+                for record in relationships
+            ]
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': visual_schema,
+            'message': 'Visual schema retrieved successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404

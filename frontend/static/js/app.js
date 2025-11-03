@@ -915,5 +915,175 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Database Schema Functions
+    document.getElementById('loadSchemaBtn').addEventListener('click', async function() {
+        const button = this;
+        try {
+            setButtonLoading(button, true);
+            const result = await makeAPICall('/api/schema');
+            displayDatabaseSchema(result.data);
+            document.getElementById('schemaDisplay').style.display = 'block';
+            showSuccess('Database schema loaded successfully!');
+        } catch (error) {
+            showError(`Failed to load schema: ${error.message}`);
+        } finally {
+            setButtonLoading(button, false);
+        }
+    });
+    
+    document.getElementById('exportSchemaBtn').addEventListener('click', async function() {
+        try {
+            const result = await makeAPICall('/api/schema');
+            const dataStr = JSON.stringify(result.data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'nexus_database_schema.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            showSuccess('Schema exported successfully!');
+        } catch (error) {
+            showError(`Failed to export schema: ${error.message}`);
+        }
+    });
+    
+    document.getElementById('visualSchemaBtn').addEventListener('click', async function() {
+        try {
+            const result = await makeAPICall('/api/schema/visual');
+            displayVisualSchema(result.data);
+            document.getElementById('schemaDisplay').style.display = 'block';
+            showSuccess('Visual schema loaded!');
+        } catch (error) {
+            showError(`Failed to load visual schema: ${error.message}`);
+        }
+    });
+    
+    document.getElementById('schemaStatsBtn').addEventListener('click', async function() {
+        try {
+            const result = await makeAPICall('/api/schema');
+            displaySchemaStatistics(result.data.statistics);
+            document.getElementById('schemaDisplay').style.display = 'block';
+            showSuccess('Schema statistics loaded!');
+        } catch (error) {
+            showError(`Failed to load schema statistics: ${error.message}`);
+        }
+    });
+    
+    function displayDatabaseSchema(schema) {
+        const content = document.getElementById('schemaContent');
+        let html = '<div class="schema-sections">';
+        
+        // Nodes Section
+        html += '<div class="schema-section">';
+        html += '<h4>📊 Node Types</h4>';
+        Object.entries(schema.nodes).forEach(([label, info]) => {
+            html += `<div class="node-info">`;
+            html += `<h5>${label} (${info.count} nodes)</h5>`;
+            html += `<div class="properties-list">`;
+            info.properties.forEach(prop => {
+                html += `<span class="property-tag">${prop}</span>`;
+            });
+            html += `</div></div>`;
+        });
+        html += '</div>';
+        
+        // Relationships Section
+        html += '<div class="schema-section">';
+        html += '<h4>🔗 Relationship Types</h4>';
+        Object.entries(schema.relationships).forEach(([type, info]) => {
+            html += `<div class="relationship-info">`;
+            html += `<h5>${type} (${info.total_count} relationships)</h5>`;
+            html += `<div>`;
+            info.patterns.forEach(pattern => {
+                html += `<span class="relationship-pattern">${pattern.from} → ${pattern.to} (${pattern.count})</span>`;
+            });
+            html += `</div></div>`;
+        });
+        html += '</div>';
+        
+        // Statistics Section
+        html += '<div class="schema-section">';
+        html += '<h4>📈 Database Statistics</h4>';
+        html += '<div class="schema-stats">';
+        html += `<div class="stat-card">
+                    <div class="stat-value">${schema.statistics.total_nodes}</div>
+                    <div class="stat-label">Total Nodes</div>
+                 </div>`;
+        html += `<div class="stat-card">
+                    <div class="stat-value">${schema.statistics.total_relationships}</div>
+                    <div class="stat-label">Total Relationships</div>
+                 </div>`;
+        html += `<div class="stat-card">
+                    <div class="stat-value">${schema.statistics.node_types}</div>
+                    <div class="stat-label">Node Types</div>
+                 </div>`;
+        html += `<div class="stat-card">
+                    <div class="stat-value">${schema.statistics.relationship_types}</div>
+                    <div class="stat-label">Relationship Types</div>
+                 </div>`;
+        html += '</div></div>';
+        
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    function displayVisualSchema(visualData) {
+        const content = document.getElementById('schemaContent');
+        let html = '<div class="schema-sections">';
+        
+        html += '<div class="schema-section">';
+        html += '<h4>🎯 Visual Schema Representation</h4>';
+        
+        // Nodes
+        html += '<h5>Node Types:</h5>';
+        visualData.nodes.forEach(node => {
+            html += `<div class="node-info">
+                        <h5>${node.label}</h5>
+                        <p>Count: ${node.count} nodes</p>
+                     </div>`;
+        });
+        
+        // Relationships
+        html += '<h5>Relationship Patterns:</h5>';
+        visualData.relationships.forEach(rel => {
+            html += `<div class="relationship-info">
+                        <h5>(${rel.source})-[${rel.type}]->(${rel.target})</h5>
+                        <p>Count: ${rel.count} relationships</p>
+                     </div>`;
+        });
+        
+        html += '</div></div>';
+        content.innerHTML = html;
+    }
+    
+    function displaySchemaStatistics(stats) {
+        const content = document.getElementById('schemaContent');
+        const html = `
+            <div class="schema-section">
+                <h4>📊 Database Statistics Summary</h4>
+                <div class="schema-stats">
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.total_nodes}</div>
+                        <div class="stat-label">Total Nodes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.total_relationships}</div>
+                        <div class="stat-label">Total Relationships</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.node_types}</div>
+                        <div class="stat-label">Node Types</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.relationship_types}</div>
+                        <div class="stat-label">Relationship Types</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        content.innerHTML = html;
+    }
+    
     console.log('🌐 All Nexus event listeners registered successfully');
 });
