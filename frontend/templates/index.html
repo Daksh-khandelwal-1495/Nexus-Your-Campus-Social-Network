@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - Connect. Discover. Thrive.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 Nexus</h1>
+            <p>Connect. Discover. Thrive. | Your Campus Social Network</p>
+        </header>
+
+        <main>
+            <!-- Navigation Tabs -->
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="dashboard">📊 Dashboard</button>
+                    <button class="tab-button" data-tab="students">👨‍🎓 Students</button>
+                    <button class="tab-button" data-tab="courses">📚 Courses</button>
+                    <button class="tab-button" data-tab="clubs">🏛️ Clubs</button>
+                    <button class="tab-button" data-tab="relationships">🔗 Relationships</button>
+                    <button class="tab-button" data-tab="social">👥 Social Features</button>
+                    <button class="tab-button" data-tab="demo">🚀 Demo Data</button>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard-tab">
+                <section class="form-section">
+                    <h2>📊 Network Dashboard</h2>
+                    
+                    <div class="search-container">
+                        <input type="text" class="search-input" id="globalSearch" placeholder="Search students, courses, or clubs...">
+                        <div class="filter-tags">
+                            <span class="filter-tag active" data-filter="all">All</span>
+                            <span class="filter-tag" data-filter="students">Students</span>
+                            <span class="filter-tag" data-filter="courses">Courses</span>
+                            <span class="filter-tag" data-filter="clubs">Clubs</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-grid" id="dashboardStats">
+                        <div class="dashboard-widget students">
+                            <div class="widget-header">
+                                <span class="widget-icon">👨‍🎓</span>
+                                <span class="widget-title">Total Students</span>
+                            </div>
+                            <div class="widget-value" id="totalStudents">-</div>
+                            <div class="widget-label">Registered</div>
+                        </div>
+                        
+                        <div class="dashboard-widget courses">
+                            <div class="widget-header">
+                                <span class="widget-icon">📚</span>
+                                <span class="widget-title">Total Courses</span>
+                            </div>
+                            <div class="widget-value" id="totalCourses">-</div>
+                            <div class="widget-label">Available</div>
+                        </div>
+                        
+                        <div class="dashboard-widget clubs">
+                            <div class="widget-header">
+                                <span class="widget-icon">🏛️</span>
+                                <span class="widget-title">Total Clubs</span>
+                            </div>
+                            <div class="widget-value" id="totalClubs">-</div>
+                            <div class="widget-label">Active</div>
+                        </div>
+                        
+                        <div class="dashboard-widget connections">
+                            <div class="widget-header">
+                                <span class="widget-icon">🔗</span>
+                                <span class="widget-title">Connections</span>
+                            </div>
+                            <div class="widget-value" id="totalConnections">-</div>
+                            <div class="widget-label">Total Relationships</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <h3>Quick Actions</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="refreshDashboard" class="action-btn primary">🔄 Refresh Data</button>
+                            <button id="viewPopularCourses" class="action-btn secondary">🏆 Popular Courses</button>
+                            <button id="networkAnalysis" class="action-btn secondary">📈 Network Analysis</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Students Tab -->
+            <div class="tab-content active" id="students-tab">
+                <section class="form-section">
+                    <h2>👨‍🎓 Student Management</h2>
+                    
+                    <div class="form-group">
+                        <h3>Create Student</h3>
+                        <form id="createStudentForm">
+                            <input type="text" id="studentName" placeholder="Student Name" required>
+                            <input type="text" id="studentId" placeholder="Student ID" required>
+                            <button type="submit">Create Student</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Find Student</h3>
+                        <form id="findStudentForm">
+                            <input type="text" id="searchStudentId" placeholder="Student ID" required>
+                            <button type="submit">Find Student</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Delete Student</h3>
+                        <form id="deleteStudentForm">
+                            <input type="text" id="deleteStudentId" placeholder="Student ID" required>
+                            <button type="submit">Delete Student</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Courses Tab -->
+            <div class="tab-content" id="courses-tab">
+                <section class="form-section">
+                    <h2>📚 Course Management</h2>
+                    
+                    <div class="form-group">
+                        <h3>Create Course</h3>
+                        <form id="createCourseForm">
+                            <input type="text" id="courseName" placeholder="Course Name" required>
+                            <input type="text" id="courseCode" placeholder="Course Code" required>
+                            <button type="submit">Create Course</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Get Course Students</h3>
+                        <form id="getCourseStudentsForm">
+                            <input type="text" id="courseCodeSearch" placeholder="Course Code" required>
+                            <button type="submit">Get Students</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Popular Courses</h3>
+                        <button id="getPopularCoursesBtn">Get Top 3 Popular Courses</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Clubs Tab -->
+            <div class="tab-content" id="clubs-tab">
+                <section class="form-section">
+                    <h2>🏛️ Club Management</h2>
+                    
+                    <div class="form-group">
+                        <h3>Create Club</h3>
+                        <form id="createClubForm">
+                            <input type="text" id="clubName" placeholder="Club Name" required>
+                            <input type="text" id="clubDescription" placeholder="Club Description" required>
+                            <button type="submit">Create Club</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Get Club Members</h3>
+                        <form id="getClubMembersForm">
+                            <input type="text" id="clubNameSearch" placeholder="Club Name" required>
+                            <button type="submit">Get Members</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Relationships Tab -->
+            <div class="tab-content" id="relationships-tab">
+                <section class="form-section">
+                    <h2>🔗 Build Relationships</h2>
+                    
+                    <div class="form-group">
+                        <h3>Follow Student</h3>
+                        <form id="followStudentForm">
+                            <input type="text" id="followerStudentId" placeholder="Follower Student ID" required>
+                            <input type="text" id="followedStudentId" placeholder="Followed Student ID" required>
+                            <button type="submit">Create Follow Relationship</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Enroll in Course</h3>
+                        <form id="enrollCourseForm">
+                            <input type="text" id="enrollStudentId" placeholder="Student ID" required>
+                            <input type="text" id="enrollCourseCode" placeholder="Course Code" required>
+                            <button type="submit">Enroll Student</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Join Club</h3>
+                        <form id="joinClubForm">
+                            <input type="text" id="joinStudentId" placeholder="Student ID" required>
+                            <input type="text" id="joinClubName" placeholder="Club Name" required>
+                            <button type="submit">Join Club</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Social Features Tab -->
+            <div class="tab-content" id="social-tab">
+                <section class="form-section">
+                    <h2>👥 Social Network Features</h2>
+                    
+                    <div class="form-group">
+                        <h3>Student's Following</h3>
+                        <form id="getFollowingForm">
+                            <input type="text" id="followingStudentId" placeholder="Student ID" required>
+                            <button type="submit">Get Following</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Student's Followers</h3>
+                        <form id="getFollowersForm">
+                            <input type="text" id="followersStudentId" placeholder="Student ID" required>
+                            <button type="submit">Get Followers</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Suggested Friends</h3>
+                        <p class="feature-description">Find friends of friends (people followed by your connections)</p>
+                        <form id="getSuggestedFriendsForm">
+                            <input type="text" id="suggestedStudentId" placeholder="Student ID" required>
+                            <button type="submit">Get Suggested Friends</button>
+                        </form>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Common Interests</h3>
+                        <p class="feature-description">Find students who share courses or club memberships with you</p>
+                        <form id="getCommonInterestsForm">
+                            <input type="text" id="commonInterestsStudentId" placeholder="Student ID" required>
+                            <button type="submit">Get Common Interests</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Demo Data Tab -->
+            <div class="tab-content" id="demo-tab">
+                <section class="form-section">
+                    <h2>🚀 Quick Start with Demo Data</h2>
+                    
+                    <div class="form-group">
+                        <h3>Create Campus Network</h3>
+                        <p class="feature-description">This will create sample students, courses, clubs, and relationships to test the Nexus platform features.</p>
+                        <button id="createDemoDataBtn" class="demo-button">Create Demo Data</button>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Sample Network Information</h3>
+                        <div class="demo-info">
+                            <p><strong>Students:</strong> Alice (S001), Bob (S002), Carol (S003), Dave (S004)</p>
+                            <p><strong>Courses:</strong> CS101, MATH101, ENG101</p>
+                            <p><strong>Clubs:</strong> Debate Club, Chess Club, Drama Club</p>
+                            <p><strong>Features to test:</strong> Follow relationships, course enrollments, club memberships</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Results Section -->
+            <section class="results-section">
+                <h2>📊 Results</h2>
+                <div id="results" class="results-container">
+                    <p>👋 Welcome to Nexus! Select a tab above to get started, or create some demo data to explore the features.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🌐 Nexus</h3>
+                <p>Connect. Discover. Thrive.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Campus Social Network</h4>
+                <p>Empowering students to build meaningful connections and discover shared interests within their university community.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Made with ❤️ by</h4>
+                <p class="developer-credit">Daksh Khandelwal</p>
+                <p class="copyright">© 2025 Daksh Khandelwal. All rights reserved.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Nexus - Campus Social Network. Developed by Daksh Khandelwal.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

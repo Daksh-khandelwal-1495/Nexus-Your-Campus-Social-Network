@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>User Profile</title>
+</head>
+<body>
+    {% include 'base.html' %}
+    <div class="profile-container">
+        <h1>{{ user.name }}'s Profile</h1>
+        <p>Student ID: {{ user.student_id }}</p>
+        <h2>Your Posts</h2>
+        <ul>
+            {% for post in posts %}
+                <li>{{ post.content }} - <em>{{ post.created_at }}</em></li>
+            {% else %}
+                <li>No posts available.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
