@@ -5,12 +5,40 @@ from db_connector import Neo4jConnection
 import logging
 import os
 from dotenv import load_dotenv
+import json
+from datetime import datetime
+from neo4j.time import DateTime, Date, Time
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+
+# JSON serialization helper for Neo4j objects
+def neo4j_json_serializer(obj):
+    """Custom JSON serializer for Neo4j objects"""
+    if isinstance(obj, (DateTime, Date, Time)):
+        return obj.iso_format()
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif hasattr(obj, '__dict__'):
+        return obj.__dict__
+    else:
+        return str(obj)
+
+def safe_jsonify(data):
+    """Safely serialize data to JSON, handling Neo4j objects"""
+    try:
+        return jsonify(data)
+    except TypeError:
+        # If direct jsonify fails, use our custom serializer
+        json_str = json.dumps(data, default=neo4j_json_serializer, indent=2)
+        return app.response_class(
+            response=json_str,
+            status=200,
+            mimetype='application/json'
+        )
 
 app = Flask(__name__, 
             template_folder='frontend/templates', 
@@ -408,7 +436,13 @@ def get_database_schema():
         try:
             constraints_query = "SHOW CONSTRAINTS"
             constraints_result = db.run_query(constraints_query)
-            schema_info["constraints"] = [dict(record) for record in constraints_result]
+            # Convert Neo4j records to dictionaries, handling special objects
+            schema_info["constraints"] = []
+            for record in constraints_result:
+                constraint_dict = {}
+                for key, value in record.items():
+                    constraint_dict[key] = value
+                schema_info["constraints"].append(constraint_dict)
         except:
             schema_info["constraints"] = []
         
@@ -416,7 +450,13 @@ def get_database_schema():
         try:
             indexes_query = "SHOW INDEXES"
             indexes_result = db.run_query(indexes_query)
-            schema_info["indexes"] = [dict(record) for record in indexes_result]
+            # Convert Neo4j records to dictionaries, handling special objects
+            schema_info["indexes"] = []
+            for record in indexes_result:
+                index_dict = {}
+                for key, value in record.items():
+                    index_dict[key] = value
+                schema_info["indexes"].append(index_dict)
         except:
             schema_info["indexes"] = []
         
@@ -437,14 +477,14 @@ def get_database_schema():
                 "relationship_types": len(rel_types)
             }
         
-        return jsonify({
+        return safe_jsonify({
             'success': True,
             'data': schema_info,
             'message': 'Database schema retrieved successfully'
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return safe_jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/schema/visual', methods=['GET'])
 def get_visual_schema():
@@ -483,10 +523,81 @@ def get_visual_schema():
             ]
         }
         
-        return jsonify({
+        return safe_jsonify({
             'success': True,
             'data': visual_schema,
             'message': 'Visual schema retrieved successfully'
+        })
+        
+    except Exception as e:
+        return safe_jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/schema/simple', methods=['GET'])
+def get_simple_schema():
+    """Get a simplified database schema without complex objects"""
+    try:
+        schema_info = {
+            "nodes": {},
+            "relationships": {},
+            "statistics": {}
+        }
+        
+        # Get node labels and their basic info
+        node_query = "CALL db.labels() YIELD label RETURN collect(label) as labels"
+        labels_result = db.run_query(node_query)
+        labels = labels_result[0]['labels'] if labels_result else []
+        
+        for label in labels:
+            # Get count and sample properties
+            count_query = f"MATCH (n:{label}) RETURN count(n) as count LIMIT 1"
+            count_result = db.run_query(count_query)
+            count = count_result[0]['count'] if count_result else 0
+            
+            # Get sample properties from first node
+            prop_query = f"MATCH (n:{label}) RETURN keys(n) as props LIMIT 1"
+            props_result = db.run_query(prop_query)
+            properties = props_result[0]['props'] if props_result else []
+            
+            schema_info["nodes"][label] = {
+                "count": int(count),
+                "properties": list(properties)
+            }
+        
+        # Get relationship types and counts
+        rel_query = "CALL db.relationshipTypes() YIELD relationshipType RETURN collect(relationshipType) as types"
+        rel_result = db.run_query(rel_query)
+        rel_types = rel_result[0]['types'] if rel_result else []
+        
+        for rel_type in rel_types:
+            # Get relationship count and simple patterns
+            count_query = f"MATCH ()-[r:{rel_type}]->() RETURN count(r) as count"
+            count_result = db.run_query(count_query)
+            count = count_result[0]['count'] if count_result else 0
+            
+            schema_info["relationships"][rel_type] = {
+                "count": int(count)
+            }
+        
+        # Basic statistics
+        total_nodes_query = "MATCH (n) RETURN count(n) as total"
+        total_nodes_result = db.run_query(total_nodes_query)
+        total_nodes = total_nodes_result[0]['total'] if total_nodes_result else 0
+        
+        total_rels_query = "MATCH ()-[r]->() RETURN count(r) as total"
+        total_rels_result = db.run_query(total_rels_query)
+        total_rels = total_rels_result[0]['total'] if total_rels_result else 0
+        
+        schema_info["statistics"] = {
+            "total_nodes": int(total_nodes),
+            "total_relationships": int(total_rels),
+            "node_types": len(labels),
+            "relationship_types": len(rel_types)
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': schema_info,
+            'message': 'Simple database schema retrieved successfully'
         })
         
     except Exception as e:

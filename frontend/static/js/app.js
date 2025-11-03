@@ -920,7 +920,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = this;
         try {
             setButtonLoading(button, true);
-            const result = await makeAPICall('/api/schema');
+            
+            let result;
+            try {
+                // Try the main schema endpoint first
+                result = await makeAPICall('/api/schema');
+            } catch (error) {
+                // If main endpoint fails, try the simple one
+                console.log('Main schema endpoint failed, trying simple endpoint:', error);
+                result = await makeAPICall('/api/schema/simple');
+                showInfo('Using simplified schema due to data formatting issues');
+            }
+            
             displayDatabaseSchema(result.data);
             document.getElementById('schemaDisplay').style.display = 'block';
             showSuccess('Database schema loaded successfully!');
@@ -993,12 +1004,21 @@ document.addEventListener('DOMContentLoaded', function() {
         html += '<h4>🔗 Relationship Types</h4>';
         Object.entries(schema.relationships).forEach(([type, info]) => {
             html += `<div class="relationship-info">`;
-            html += `<h5>${type} (${info.total_count} relationships)</h5>`;
-            html += `<div>`;
-            info.patterns.forEach(pattern => {
-                html += `<span class="relationship-pattern">${pattern.from} → ${pattern.to} (${pattern.count})</span>`;
-            });
-            html += `</div></div>`;
+            
+            // Handle both complex (with patterns) and simple (just count) relationship info
+            if (info.patterns && info.patterns.length > 0) {
+                html += `<h5>${type} (${info.total_count} relationships)</h5>`;
+                html += `<div>`;
+                info.patterns.forEach(pattern => {
+                    html += `<span class="relationship-pattern">${pattern.from} → ${pattern.to} (${pattern.count})</span>`;
+                });
+                html += `</div>`;
+            } else {
+                // Simple format - just show count
+                html += `<h5>${type} (${info.count || info.total_count} relationships)</h5>`;
+                html += `<p>Relationship pattern details not available in simplified view</p>`;
+            }
+            html += `</div>`;
         });
         html += '</div>';
         
